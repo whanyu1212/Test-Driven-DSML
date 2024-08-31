@@ -1,0 +1,2 @@
+# Test-Driven DSML: A Guide to Using pytest for Data Science and Machine Learning Projects
+This repository contains presentation slides created for a technical sharing session focused on leveraging pytest for testing in Data Science and Machine Learning (DSML) projects. It aims to demonstrate how we can effectively apply test-driven development (TDD) principles to ensure the reliability, maintainability, and scalability of DSML pipelines and models.
