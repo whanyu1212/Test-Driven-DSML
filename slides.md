@@ -85,9 +85,15 @@ Why is testing a must for robust data science work?
   :enter="{ x: 0, opacity: 1, scale: 1, transition: { delay: 100, duration: 1300 } }"
 >
 
+<p>
+
 - 🛠 **Ensuring Reliability:** - Without proper testing, models may produce incorrect results, leading to potentially costly mistakes
+
 - 📖 **Maintaining Code Quality:** - Consistent testing helps maintain high code quality, making it easier to refactor, optimize, and extend your DS codebase
+
 - 🏭 **Preventing Regressions:** - Tests act as a safety net, preventing new changes from breaking existing functionality, which is particularly important in complex and large scaled DSML pipelines
+
+</p>
 </div>
 <br>
 <br>
@@ -109,11 +115,17 @@ h1 {
   -webkit-text-fill-color: transparent;
   -moz-text-fill-color: transparent;
 }
+p {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 16px;
+  color: #333;
+}
 </style>
 
 <!--
 Here is another comment.
 -->
+
 
 ---
 transition: slide-up
@@ -122,7 +134,7 @@ transition: slide-up
 # Invoking pytest
 Assuming `pytest` library is installed successfully as a project dependency
 
-```python {*}{maxHeight:'250px'}
+```python {*}
 # Run tests in a module
 pytest test_mod.py
 
@@ -132,6 +144,16 @@ pytest testing/
 # Run tests by keyword expressions
 # Run tests with substring 'MyClass' and exclude those that contains 'method'
 pytest -k 'MyClass and not method'
+
+# Verbosity related
+
+# quiet mode
+pytest -q
+# increase verbosity, display individual test names
+pytest -v
+
+# more verbose, display more details from the test output               
+pytest -vv              
 ```
 
 <style>
@@ -144,39 +166,66 @@ h1 {
   -webkit-text-fill-color: transparent;
   -moz-text-fill-color: transparent;
 }
+p {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 14px;
+  color: #333;
+}
 </style>
 
 ---
-transition: slide-up
+transition: fade-out
+layout: two-cols-header
 ---
 
-# Assertions, Fixtures and Parameterization
-assertions, fixtures and parameterization
+# Assertions, Fixtures and Parameterization 
+Some common assertions (non-exhaustive) to consider for Data Science work:
 
-```python {*}
-## Writing basic assertions
+::left::
+<p>
 
-def test_dataframe_structure():
-    # Call the function that should return a DataFrame
-    df = generate_dataframe()
+1. Data integrity related assertions
+   - data types
+   - missing values
+   - correctness of the fields
 
-    # Check if the object is a DataFrame
-    assert isinstance(df, pd.DataFrame), "The object is not a DataFrame"
+2. Data transformation assertions
+   - derived features are processed correctly
+3. Statistical assertions
+   -  distributional properties are as expected
+4. Model assertions
+   -  performance is stable
+   - output format is correct
+  
+</p>
 
-    # Expected columns
-    expected_columns = ["column1", "column2", "column3"]
+::right::
 
-    # Check if the DataFrame contains the expected columns
-    assert list(df.columns) == expected_columns, (
-        f"DataFrame columns do not match expected columns. Got {list(df.columns)}"
-    )
+```python{*}
+@pytest.fixture
+def sample_dataframe():
+    data = {
+        'A': [1, 2, 3, 4, 5],
+        'B': [5, 4, 3, 2, 1],
+        'C': ['a', 'b', 'c', 'd', 'e']
+    }
+    return pd.DataFrame(data)
 
-## Define multiple sets of arguments and fixtures using @pytest.mark.parametrize 
+# Parameterized test for data types
+@pytest.mark.parametrize("column, expected_dtype", [
+    ('A', np.int64),
+    ('B', np.int64),
+    ('C', object)
+])
+def test_data_types(sample_dataframe, column, expected_dtype):
+    assert sample_dataframe[column].dtype == expected_dtype
 
-@pytest.mark.parametrize("test_input,expected", [("3+5", 8), ("2+4", 6), ("6*9", 42)])
-def test_eval(test_input, expected):
-    assert eval(test_input) == expected
+# Parameterized test for missing values
+@pytest.mark.parametrize("column", ['A', 'B', 'C'])
+def test_no_missing_values(sample_dataframe, column):
+    assert sample_dataframe[column].isnull().sum() == 0
 ```
+
 
 <style>
 h1 {
@@ -187,6 +236,11 @@ h1 {
   -moz-background-clip: text;
   -webkit-text-fill-color: transparent;
   -moz-text-fill-color: transparent;
+}
+p {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 14px;
+  color: #333;
 }
 </style>
 
@@ -197,28 +251,28 @@ transition: slide-up
 # Monkeypatching / Mocking (1)
 Useful for simulating an external dependency, e.g., API Interaction
 
+ It allows you to <span style="color: red;">isolate the unit of code</span> being tested by simulating external dependencies, ensuring that tests focus solely on the functionality of the code under test
+
+
+Example:
+
 ```python{*}
-## Monkeypatching config in dictionary
-DEFAULT_CONFIG = {"user": "user1", "database": "db1"}
+import requests
 
+# Function that interacts with an API
+def fetch_data_from_api(url):
+    response = requests.get(url)
+    return response.json()
 
-def create_connection_string(config=None):
-    """Creates a connection string from input or defaults."""
-    config = config or DEFAULT_CONFIG
-    return f"User Id={config['user']}; Location={config['database']};"
+# Test function using pytest-mock to mock the API interaction
+def test_fetch_data_from_api(mocker):
+    mock_response = mocker.Mock()
+    mock_response.json.return_value = {"key": "value"}
+    mocker.patch('requests.get', return_value=mock_response)
+    url = "http://example.com/api"
+    result = fetch_data_from_api(url)
+    assert result == {"key": "value"}
 
-def test_connection(monkeypatch):
-    # Patch the values of DEFAULT_CONFIG to specific
-    # testing values only for this test.
-    monkeypatch.setitem(DEFAULT_CONFIG, "user", "test_user")
-    monkeypatch.setitem(DEFAULT_CONFIG, "database", "test_db")
-
-    # expected result based on the mocks
-    expected = "User Id=test_user; Location=test_db;"
-
-    # the test uses the monkeypatched dictionary settings
-    result = create_connection_string()
-    assert result == expected
 ```
 
 <style>
@@ -230,6 +284,11 @@ h1 {
   -moz-background-clip: text;
   -webkit-text-fill-color: transparent;
   -moz-text-fill-color: transparent;
+}
+p {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 14px;
+  color: #333;
 }
 </style>
 
