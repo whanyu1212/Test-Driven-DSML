@@ -254,24 +254,33 @@ Useful for simulating an external dependency, e.g., API Interaction
  It allows you to <span style="color: red;">isolate the unit of code</span> being tested by simulating external dependencies, ensuring that tests focus solely on the functionality of the code under test
 
 
-Example:
+Example 1: Using pytest-mock
 
-```python{*}
-import requests
+```python{*}{maxHeight:'300px'}
+def fetch_stock_data(ticker: str) -> pd.DataFrame:
+    stock = yf.Ticker(ticker)
+    return stock.history(period="1d")
 
-# Function that interacts with an API
-def fetch_data_from_api(url):
-    response = requests.get(url)
-    return response.json()
+def test_fetch_stock_data(mocker):
+    # Expected DataFrame
+    expected_df = pd.DataFrame({
+        "Open": [100.0],
+        "High": [105.0],
+        "Low": [95.0],
+        "Close": [102.0],
+        "Volume": [1000]
+    })
+    
+    # Patch the history method to return the expected DataFrame
+    mocker.patch.object(yf.Ticker, 'history', return_value=expected_df)
+    
+    # Call the function
+    ticker = "AAPL"
+    result = fetch_stock_data(ticker)
+    
+    # Assert the result
+    pd.testing.assert_frame_equal(result, expected_df)
 
-# Test function using pytest-mock to mock the API interaction
-def test_fetch_data_from_api(mocker):
-    mock_response = mocker.Mock()
-    mock_response.json.return_value = {"key": "value"}
-    mocker.patch('requests.get', return_value=mock_response)
-    url = "http://example.com/api"
-    result = fetch_data_from_api(url)
-    assert result == {"key": "value"}
 
 ```
 
@@ -300,28 +309,37 @@ transition: slide-up
 # Monkeypatching / Mocking (2)
 Useful for simulating an external dependency, e.g., API Interaction
 
-```python{*}
-## Monkeypatching config in dictionary
-DEFAULT_CONFIG = {"user": "user1", "database": "db1"}
+Example 2: Using monkeypatch
 
+```python{*}{maxHeight:'400px'}
+# Your function
+def fetch_stock_data(ticker: str):
+    stock = yf.Ticker(ticker)
+    return stock.history(period="1d")
 
-def create_connection_string(config=None):
-    """Creates a connection string from input or defaults."""
-    config = config or DEFAULT_CONFIG
-    return f"User Id={config['user']}; Location={config['database']};"
+# Test function using monkeypatch
+def test_fetch_stock_data(monkeypatch):
+    # Mock response
+    mock_history = pd.DataFrame({
+        "Open": [100.0],
+        "High": [105.0],
+        "Low": [95.0],
+        "Close": [102.0],
+        "Volume": [1000]
+    })
 
-def test_connection(monkeypatch):
-    # Patch the values of DEFAULT_CONFIG to specific
-    # testing values only for this test.
-    monkeypatch.setitem(DEFAULT_CONFIG, "user", "test_user")
-    monkeypatch.setitem(DEFAULT_CONFIG, "database", "test_db")
-
-    # expected result based on the mocks
-    expected = "User Id=test_user; Location=test_db;"
-
-    # the test uses the monkeypatched dictionary settings
-    result = create_connection_string()
-    assert result == expected
+    # Mock function to replace the real `history` call
+    def mock_get_history(self, period):
+        return mock_history
+    
+    # Use monkeypatch to replace `history` method
+    monkeypatch.setattr(yf.Ticker, "history", mock_get_history)
+    
+    # Call the function
+    result = fetch_stock_data("AAPL")
+    
+    # Assertions to validate the results
+    assert result.equals(mock_history)
 ```
 
 <style>
@@ -334,190 +352,119 @@ h1 {
   -webkit-text-fill-color: transparent;
   -moz-text-fill-color: transparent;
 }
+p {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 14px;
+  color: #333;
+}
 </style>
 
 
 ---
-layout: two-cols
-layoutClass: gap-16
+transition: fade-out
+layout: two-cols-header
 ---
 
+# Handling Failures
+Save effort and time to only tackle the failed tests
 
+::left::
 
+**Prioritizing failed tests:**
 
-# LaTeX
+```python{*}{maxHeight:'400px'}
+# Only re-run the failures
+pytest --lf
+pytest --last-failed
 
-LaTeX is supported out-of-box. Powered by [KaTeX](https://katex.org/).
+# Re-run the failures first and then follow by the rest
+pytest --ff
+pytest --failed-first
 
-<div h-3 />
+# runs the full test suite (default behavior)
+pytest --last-failed --last-failed-no-failures all  
+# runs no tests and exits successfully  
+pytest --last-failed --last-failed-no-failures none   
 
-Inline $\sqrt{3x-1}+(1+x)^2$
+# clear cache
+pytest --cache-clear
+```
 
-Block
-$$ {1|3|all}
-\begin{aligned}
-\nabla \cdot \vec{E} &= \frac{\rho}{\varepsilon_0} \\
-\nabla \cdot \vec{B} &= 0 \\
-\nabla \times \vec{E} &= -\frac{\partial\vec{B}}{\partial t} \\
-\nabla \times \vec{B} &= \mu_0\vec{J} + \mu_0\varepsilon_0\frac{\partial\vec{E}}{\partial t}
-\end{aligned}
-$$
+::right::
 
-[Learn more](https://sli.dev/features/latex)
+**Python debugger:**
+
+<style>
+h1 {
+  background-color: #2B90B6;
+  background-image: linear-gradient(45deg, #4EC5D4 10%, #146b8c 20%);
+  background-size: 100%;
+  -webkit-background-clip: text;
+  -moz-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -moz-text-fill-color: transparent;
+}
+p {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+</style>
+
 
 ---
+transition: fade-out
+---
+# Unit tests vs Integration tests
 
-# Diagrams
 
-You can create diagrams / graphs from textual descriptions, directly in your Markdown.
+---
+transition: fade-out
+---
+# Impact of Design Pattern on Testing
+Some examples on how different design patterns affect the method and focus of testing
 
-<div class="grid grid-cols-4 gap-5 pt-4 -mb-6">
+<div grid="~ cols-2 gap-4">
+<div>
 
-```mermaid {scale: 0.5, alt: 'A simple sequence diagram'}
-sequenceDiagram
-    Alice->John: Hello John, how are you?
-    Note over Alice,John: A typical interaction
+```mermaid{scale: 0.5, alt: 'A simple sequence diagram'}
+graph LR
+    A[Factory Pattern] --> B[Test the output objects, not constructors]
+    A --> C[Mock factory methods to control object creation]
+    A --> D[Ensure returned objects adhere to expected interfaces]
+
+    E[Builder Pattern] --> F[Test intermediate states and final object configuration]
+    E --> G[Test various configurations and chaining methods]
+    E --> H[Verify the object at each build step]
 ```
-
-```mermaid {theme: 'neutral', scale: 0.8}
-graph TD
-B[Text] --> C{Decision}
-C -->|One| D[Result 1]
-C -->|Two| E[Result 2]
-```
-
-```mermaid
-mindmap
-  root((mindmap))
-    Origins
-      Long history
-      ::icon(fa fa-book)
-      Popularisation
-        British popular psychology author Tony Buzan
-    Research
-      On effectiveness<br/>and features
-      On Automatic creation
-        Uses
-            Creative techniques
-            Strategic planning
-            Argument mapping
-    Tools
-      Pen and paper
-      Mermaid
-```
-
-```plantuml {scale: 0.7}
-@startuml
-
-package "Some Group" {
-  HTTP - [First Component]
-  [Another Component]
-}
-
-node "Other Groups" {
-  FTP - [Second Component]
-  [First Component] --> FTP
-}
-
-cloud {
-  [Example 1]
-}
-
-database "MySql" {
-  folder "This is my folder" {
-    [Folder 3]
-  }
-  frame "Foo" {
-    [Frame 4]
-  }
-}
-
-[Another Component] --> [Example 1]
-[Example 1] --> [Folder 3]
-[Folder 3] --> [Frame 4]
-
-@enduml
-```
-
 </div>
+<div>
 
-Learn more: [Mermaid Diagrams](https://sli.dev/features/mermaid) and [PlantUML Diagrams](https://sli.dev/features/plantuml)
+```python{*}
+def test_shape_factory():
+    factory = ShapeFactory()
 
----
-foo: bar
-dragPos:
-  square: 691,32,167,_,-16
----
+    circle = factory.create_shape("circle")
+    assert isinstance(circle, Circle)
+    assert circle.draw() == "Drawing a Circle"
 
-# Draggable Elements
-
-Double-click on the draggable elements to edit their positions.
-
+    square = factory.create_shape("square")
+    assert isinstance(square, Square)
+    assert square.draw() == "Drawing a Square"
+```
 <br>
-
-###### Directive Usage
-
-```md
-<img v-drag="'square'" src="https://sli.dev/logo.png">
-```
-
 <br>
+```python{*}
+def test_car_builder():
+    builder = CarBuilder()
+    car = builder.add_engine("V8").add_wheels(4).build()
 
-###### Component Usage
-
-```md
-<v-drag text-3xl>
-  <carbon:arrow-up />
-  Use the `v-drag` component to have a draggable container!
-</v-drag>
+    assert car.engine == "V8"
+    assert len(car.wheels) == 4
+    assert all(wheel == "Wheel" for wheel in car.wheels)
 ```
-
-<v-drag pos="663,206,261,_,-15">
-  <div text-center text-3xl border border-main rounded>
-    Double-click me!
-  </div>
-</v-drag>
-
-<img v-drag="'square'" src="https://sli.dev/logo.png">
-
-###### Draggable Arrow
-
-```md
-<v-drag-arrow two-way />
-```
-
-<v-drag-arrow pos="67,452,253,46" two-way op70 />
-
----
-src: ./pages/imported-slides.md
-hide: false
----
-
----
-
-# Monaco Editor
-
-Slidev provides built-in Monaco Editor support.
-
-Add `{monaco}` to the code block to turn it into an editor:
-
-```ts {monaco}
-import { ref } from 'vue'
-import { emptyArray } from './external'
-
-const arr = ref(emptyArray(10))
-```
-
-Use `{monaco-run}` to create an editor that can execute the code directly in the slide:
-
-```ts {monaco-run}
-import { version } from 'vue'
-import { emptyArray, sayHello } from './external'
-
-sayHello()
-console.log(`vue ${version}`)
-console.log(emptyArray<number>(10).reduce(fib => [...fib, fib.at(-1)! + fib.at(-2)!], [1, 1]))
-```
+</div>
+</div>
 
 ---
 layout: center
