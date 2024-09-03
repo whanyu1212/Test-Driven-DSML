@@ -11,6 +11,8 @@ pytest = "^8.3.2"
 ipykernel = "^6.29.5"
 pandas = "^2.2.2"
 numpy = "^2.1.0"
+yfinance = "^0.2.43"
+pytest-mock = "^3.14.0"
 
 
 [build-system]
