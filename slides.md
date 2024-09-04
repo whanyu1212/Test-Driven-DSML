@@ -362,22 +362,22 @@ p {
 
 ---
 transition: fade-out
-layout: two-cols-header
 ---
 
 # Handling Failures
-Save effort and time to only tackle the failed tests
+Useful command for caching and debugging
 
-::left::
+<div grid="~ cols-2 gap-4">
+<div>
 
 **Prioritizing failed tests:**
 
-```python{*}{maxHeight:'400px'}
+```python{*}
 # Only re-run the failures
 pytest --lf
 pytest --last-failed
 
-# Re-run the failures first and then follow by the rest
+# Re-run the failures first and then the rest
 pytest --ff
 pytest --failed-first
 
@@ -389,10 +389,33 @@ pytest --last-failed --last-failed-no-failures none
 # clear cache
 pytest --cache-clear
 ```
+</div>
 
-::right::
+<div>
 
 **Python debugger:**
+```bash{*}
+# Suppose we encountered the following failed case
+# It will go into debugger mode in terminal (Pdb)
+assert set(result.columns) == {"WAFER_SCRIBE"}
+
+# Useful commands to consider:
+
+# print the result dataframe
+p result
+
+# print the columns
+p result.columns
+
+# inspect the first 5 rows
+p result.head()
+
+# continue executing the rest
+c
+
+```
+</div>
+</div>
 
 <style>
 h1 {
@@ -416,7 +439,34 @@ p {
 transition: fade-out
 ---
 # Unit tests vs Integration tests
+Comparisons
 
+| Aspect         | Unit Tests                          | Integration Tests                      |
+|----------------|-------------------------------------|----------------------------------------|
+| <kbd>Scope</kbd>      | Individual components or functions  | Multiple components or systems         |
+| <kbd>Dependencies</kbd>   | Mocked or isolated                  | Real dependencies (depends on criticality*)                     |
+| <kbd>Speed</kbd>          | Fast                                | Slower                                 |
+| <kbd>Purpose</kbd>        | Verify correctness of small units   | Verify interactions between components |
+| <kbd>Complexity</kbd>     | Simple                              | More complex                           |
+| <kbd>Execution</kbd>      | Frequent                            | Less frequent                          |
+| <kbd>Failure Impact</kbd> | Low                                 | High                                   |
+
+<style>
+h1 {
+  background-color: #2B90B6;
+  background-image: linear-gradient(45deg, #4EC5D4 10%, #146b8c 20%);
+  background-size: 100%;
+  -webkit-background-clip: text;
+  -moz-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -moz-text-fill-color: transparent;
+}
+p {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+</style>
 
 ---
 transition: fade-out
@@ -454,6 +504,7 @@ def test_shape_factory():
 ```
 <br>
 <br>
+
 ```python{*}
 def test_car_builder():
     builder = CarBuilder()
@@ -466,12 +517,84 @@ def test_car_builder():
 </div>
 </div>
 
+<style>
+h1 {
+  background-color: #2B90B6;
+  background-image: linear-gradient(45deg, #4EC5D4 10%, #146b8c 20%);
+  background-size: 100%;
+  -webkit-background-clip: text;
+  -moz-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -moz-text-fill-color: transparent;
+}
+p {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+</style>
+
+---
+transition: fade-out
+---
+
+# Code Coverage
+
+<div grid="~ cols-2 gap-4">
+
+<div>
+
+Configuration:
+
+```bash{12}
+# pytest.ini
+[pytest]
+testpaths =
+    tests
+    integration
+filterwarnings =
+    ignore::DeprecationWarning:jupyter_client.connect
+log_cli=true
+log_level=NOTSET
+log_format = %(asctime)s %(levelname)s %(message)s
+log_date_format = %Y-%m-%d %H:%M:%S
+addopts = --cov=my_package --cov-report=term-missing
+```
+</div>
+<div>
+
+Sample output:
+<br>
+<br>
+<br>
+
+<img src="/screenshots/Capture.png" alt="screenshot">
+</div>
+</div>
+
+<style>
+h1 {
+  background-color: #2B90B6;
+  background-image: linear-gradient(45deg, #4EC5D4 10%, #146b8c 20%);
+  background-size: 100%;
+  -webkit-background-clip: text;
+  -moz-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  -moz-text-fill-color: transparent;
+}
+p {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+</style>
+
 ---
 layout: center
 class: text-center
 ---
 
-# Learn More
+# Code Walkthrough
 
 [Documentation](https://sli.dev) · [GitHub](https://github.com/slidevjs/slidev) · [Showcases](https://sli.dev/resources/showcases)
 
